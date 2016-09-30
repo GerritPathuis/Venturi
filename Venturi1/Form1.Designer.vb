@@ -22,12 +22,16 @@ Partial Class Form1
     'Do not modify it using the code editor.
     <System.Diagnostics.DebuggerStepThrough()> _
     Private Sub InitializeComponent()
+        Dim ChartArea5 As System.Windows.Forms.DataVisualization.Charting.ChartArea = New System.Windows.Forms.DataVisualization.Charting.ChartArea()
+        Dim Legend5 As System.Windows.Forms.DataVisualization.Charting.Legend = New System.Windows.Forms.DataVisualization.Charting.Legend()
+        Dim Series5 As System.Windows.Forms.DataVisualization.Charting.Series = New System.Windows.Forms.DataVisualization.Charting.Series()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(Form1))
         Me.TabControl1 = New System.Windows.Forms.TabControl()
         Me.TabPage1 = New System.Windows.Forms.TabPage()
+        Me.GroupBox5 = New System.Windows.Forms.GroupBox()
+        Me.Chart1 = New System.Windows.Forms.DataVisualization.Charting.Chart()
         Me.GroupBox4 = New System.Windows.Forms.GroupBox()
         Me.NumericUpDown5 = New System.Windows.Forms.NumericUpDown()
-        Me.TextBox15 = New System.Windows.Forms.TextBox()
         Me.NumericUpDown1 = New System.Windows.Forms.NumericUpDown()
         Me.TextBox16 = New System.Windows.Forms.TextBox()
         Me.Label1 = New System.Windows.Forms.Label()
@@ -90,6 +94,8 @@ Partial Class Form1
         Me.PictureBox1 = New System.Windows.Forms.PictureBox()
         Me.TabControl1.SuspendLayout()
         Me.TabPage1.SuspendLayout()
+        Me.GroupBox5.SuspendLayout()
+        CType(Me.Chart1, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.GroupBox4.SuspendLayout()
         CType(Me.NumericUpDown5, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.NumericUpDown1, System.ComponentModel.ISupportInitialize).BeginInit()
@@ -122,6 +128,7 @@ Partial Class Form1
         '
         'TabPage1
         '
+        Me.TabPage1.Controls.Add(Me.GroupBox5)
         Me.TabPage1.Controls.Add(Me.GroupBox4)
         Me.TabPage1.Controls.Add(Me.Button1)
         Me.TabPage1.Controls.Add(Me.GroupBox2)
@@ -134,10 +141,36 @@ Partial Class Form1
         Me.TabPage1.Text = "Process data"
         Me.TabPage1.UseVisualStyleBackColor = True
         '
+        'GroupBox5
+        '
+        Me.GroupBox5.Controls.Add(Me.Chart1)
+        Me.GroupBox5.Location = New System.Drawing.Point(415, 18)
+        Me.GroupBox5.Name = "GroupBox5"
+        Me.GroupBox5.Size = New System.Drawing.Size(401, 323)
+        Me.GroupBox5.TabIndex = 11
+        Me.GroupBox5.TabStop = False
+        Me.GroupBox5.Text = "Iteration"
+        '
+        'Chart1
+        '
+        ChartArea5.Name = "ChartArea1"
+        Me.Chart1.ChartAreas.Add(ChartArea5)
+        Me.Chart1.Dock = System.Windows.Forms.DockStyle.Fill
+        Legend5.Name = "Legend1"
+        Me.Chart1.Legends.Add(Legend5)
+        Me.Chart1.Location = New System.Drawing.Point(3, 16)
+        Me.Chart1.Name = "Chart1"
+        Series5.ChartArea = "ChartArea1"
+        Series5.Legend = "Legend1"
+        Series5.Name = "Series1"
+        Me.Chart1.Series.Add(Series5)
+        Me.Chart1.Size = New System.Drawing.Size(395, 304)
+        Me.Chart1.TabIndex = 9
+        Me.Chart1.Text = "Chart1"
+        '
         'GroupBox4
         '
         Me.GroupBox4.Controls.Add(Me.NumericUpDown5)
-        Me.GroupBox4.Controls.Add(Me.TextBox15)
         Me.GroupBox4.Controls.Add(Me.NumericUpDown1)
         Me.GroupBox4.Controls.Add(Me.TextBox16)
         Me.GroupBox4.Controls.Add(Me.Label1)
@@ -149,7 +182,7 @@ Partial Class Form1
         Me.GroupBox4.Controls.Add(Me.Label7)
         Me.GroupBox4.Location = New System.Drawing.Point(31, 246)
         Me.GroupBox4.Name = "GroupBox4"
-        Me.GroupBox4.Size = New System.Drawing.Size(363, 206)
+        Me.GroupBox4.Size = New System.Drawing.Size(363, 163)
         Me.GroupBox4.TabIndex = 8
         Me.GroupBox4.TabStop = False
         Me.GroupBox4.Text = "Iteratie "
@@ -157,7 +190,8 @@ Partial Class Form1
         'NumericUpDown5
         '
         Me.NumericUpDown5.BackColor = System.Drawing.Color.Yellow
-        Me.NumericUpDown5.DecimalPlaces = 2
+        Me.NumericUpDown5.DecimalPlaces = 3
+        Me.NumericUpDown5.Enabled = False
         Me.NumericUpDown5.Increment = New Decimal(New Integer() {1, 0, 0, 131072})
         Me.NumericUpDown5.Location = New System.Drawing.Point(255, 97)
         Me.NumericUpDown5.Maximum = New Decimal(New Integer() {9, 0, 0, 65536})
@@ -166,15 +200,7 @@ Partial Class Form1
         Me.NumericUpDown5.Size = New System.Drawing.Size(70, 20)
         Me.NumericUpDown5.TabIndex = 24
         Me.NumericUpDown5.TextAlign = System.Windows.Forms.HorizontalAlignment.Center
-        Me.NumericUpDown5.Value = New Decimal(New Integer() {5, 0, 0, 65536})
-        '
-        'TextBox15
-        '
-        Me.TextBox15.Location = New System.Drawing.Point(253, 173)
-        Me.TextBox15.Name = "TextBox15"
-        Me.TextBox15.Size = New System.Drawing.Size(71, 20)
-        Me.TextBox15.TabIndex = 25
-        Me.TextBox15.TextAlign = System.Windows.Forms.HorizontalAlignment.Center
+        Me.NumericUpDown5.Value = New Decimal(New Integer() {68, 0, 0, 131072})
         '
         'NumericUpDown1
         '
@@ -187,7 +213,7 @@ Partial Class Form1
         Me.NumericUpDown1.Size = New System.Drawing.Size(70, 20)
         Me.NumericUpDown1.TabIndex = 24
         Me.NumericUpDown1.TextAlign = System.Windows.Forms.HorizontalAlignment.Center
-        Me.NumericUpDown1.Value = New Decimal(New Integer() {36000, 0, 0, 0})
+        Me.NumericUpDown1.Value = New Decimal(New Integer() {30000, 0, 0, 0})
         '
         'TextBox16
         '
@@ -229,7 +255,8 @@ Partial Class Form1
         '
         'NumericUpDown4
         '
-        Me.NumericUpDown4.Increment = New Decimal(New Integer() {10, 0, 0, 0})
+        Me.NumericUpDown4.BackColor = System.Drawing.Color.Yellow
+        Me.NumericUpDown4.Increment = New Decimal(New Integer() {5, 0, 0, 0})
         Me.NumericUpDown4.Location = New System.Drawing.Point(254, 71)
         Me.NumericUpDown4.Maximum = New Decimal(New Integer() {1200, 0, 0, 0})
         Me.NumericUpDown4.Minimum = New Decimal(New Integer() {100, 0, 0, 0})
@@ -237,7 +264,7 @@ Partial Class Form1
         Me.NumericUpDown4.Size = New System.Drawing.Size(70, 20)
         Me.NumericUpDown4.TabIndex = 1
         Me.NumericUpDown4.TextAlign = System.Windows.Forms.HorizontalAlignment.Center
-        Me.NumericUpDown4.Value = New Decimal(New Integer() {400, 0, 0, 0})
+        Me.NumericUpDown4.Value = New Decimal(New Integer() {800, 0, 0, 0})
         '
         'Label3
         '
@@ -290,7 +317,7 @@ Partial Class Form1
         Me.GroupBox2.Controls.Add(Me.TextBox2)
         Me.GroupBox2.Controls.Add(Me.Label8)
         Me.GroupBox2.Controls.Add(Me.Label5)
-        Me.GroupBox2.Location = New System.Drawing.Point(434, 223)
+        Me.GroupBox2.Location = New System.Drawing.Point(31, 428)
         Me.GroupBox2.Name = "GroupBox2"
         Me.GroupBox2.Size = New System.Drawing.Size(363, 216)
         Me.GroupBox2.TabIndex = 6
@@ -498,7 +525,7 @@ Partial Class Form1
         Me.NumericUpDown8.Size = New System.Drawing.Size(70, 20)
         Me.NumericUpDown8.TabIndex = 11
         Me.NumericUpDown8.TextAlign = System.Windows.Forms.HorizontalAlignment.Center
-        Me.NumericUpDown8.Value = New Decimal(New Integer() {1, 0, 0, 0})
+        Me.NumericUpDown8.Value = New Decimal(New Integer() {3, 0, 0, 0})
         '
         'Label13
         '
@@ -820,6 +847,8 @@ Partial Class Form1
         Me.Text = "Venturi 28-09-2016"
         Me.TabControl1.ResumeLayout(False)
         Me.TabPage1.ResumeLayout(False)
+        Me.GroupBox5.ResumeLayout(False)
+        CType(Me.Chart1, System.ComponentModel.ISupportInitialize).EndInit()
         Me.GroupBox4.ResumeLayout(False)
         Me.GroupBox4.PerformLayout()
         CType(Me.NumericUpDown5, System.ComponentModel.ISupportInitialize).EndInit()
@@ -906,7 +935,8 @@ Partial Class Form1
     Friend WithEvents GroupBox4 As GroupBox
     Friend WithEvents TextBox16 As TextBox
     Friend WithEvents NumericUpDown1 As NumericUpDown
-    Friend WithEvents TextBox15 As TextBox
     Friend WithEvents NumericUpDown5 As NumericUpDown
     Friend WithEvents NumericUpDown4 As NumericUpDown
+    Friend WithEvents Chart1 As DataVisualization.Charting.Chart
+    Friend WithEvents GroupBox5 As GroupBox
 End Class
