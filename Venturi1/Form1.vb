@@ -18,66 +18,78 @@ Public Class Form1
     Dim A2a, A2b, a2c As Double
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        'Start bbb
-    End Sub
-    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click, NumericUpDown2.ValueChanged, NumericUpDown8.ValueChanged, NumericUpDown11.ValueChanged, NumericUpDown7.ValueChanged, NumericUpDown6.ValueChanged, NumericUpDown1.ValueChanged, NumericUpDown4.ValueChanged, NumericUpDown5.ValueChanged
-        Dim Ecc1, Ecc2, Ecc3 As Double
-        Dim Dev1, Dev2, Dev3 As Double
+        TextBox21.Text =
+       "ISO5167-4:2003" & vbCrLf &
+       "Classieke Venturi diameter 200-1200mm"
 
-        beta = NumericUpDown5.Value
-        Ecc1 = 0        'Start lower limit of eccentricity [-]
-        Ecc2 = 1.0      'Start upper limit of eccentricity [-]
-        Ecc3 = 0.5      'In the middle of eccentricity [-]
-
-        Dev1 = calc_A2(Ecc1)
-        Dev2 = calc_A2(Ecc2)
-        Dev3 = calc_A2(Ecc3)
-
-        '-------------Iteratie 30x halveren moet voldoende zijn ---------------
-        '---------- Exc= excentricity, looking for Deviation is zero ---------
-
-        For jjr = 0 To 30
-            If Dev1 * Dev3 < 0 Then
-                Ecc2 = Ecc3
-            Else
-                Ecc1 = Ecc3
-            End If
-            Ecc3 = (Ecc1 + Ecc2) / 2
-            Dev1 = calc_A2(Ecc1)
-            Dev2 = calc_A2(Ecc2)
-            Dev3 = calc_A2(Ecc3)
-        Next jjr
-        NumericUpDown5.Value = Round(Ecc3, 3).ToString              'Beta diameter ratio
-        beta = Ecc3
-        dia_keel = beta * dia_in
-
-        '-------- Controle nulpunt zoek functie ----------------
-        If Dev3 > 0.01 Then
-            GroupBox4.BackColor = Color.Red
-        Else
-            GroupBox4.BackColor = Color.Transparent
-        End If
-
-        present_results()
-        draw_chart1()
-    End Sub
-
-    Private Function calc_A2(betaa As Double)
-        C_classic = 0.985                           'See ISO5167-4 section 5.5.4
+        '------------- Initial values----------------------
         kappa = NumericUpDown7.Value                'Isentropic exponent
         density = NumericUpDown2.Value              '[kg/m3]
         kin_visco = NumericUpDown6.Value * 10 ^ -6
         p1_tap = NumericUpDown11.Value * 100        '[mBar]->[pa]
         dp_tap = NumericUpDown8.Value * 100         '[mBar]->[pa]
         dia_in = NumericUpDown4.Value / 1000        '[m] classis venturi inlet diameter = outlet diameter
+        beta = NumericUpDown5.Value
+        dyn_visco = kin_visco / density             'Calc dyn visco
+        p2_tap = p1_tap - dp_tap
+        tou = p2_tap / p1_tap                       'Pressure ratio
 
-        '-------------VB Prevent div by zero problems ----------------
-        If density = 0 Then density = 1             'Prevent problems
+        C_classic = 0.985                           'See ISO5167-4 section 5.5.4
+        Button1.PerformClick()
+        Button1.PerformClick()                      'God knows why
+    End Sub
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click, NumericUpDown2.ValueChanged, NumericUpDown8.ValueChanged, NumericUpDown11.ValueChanged, NumericUpDown7.ValueChanged, NumericUpDown6.ValueChanged, NumericUpDown1.ValueChanged, NumericUpDown4.ValueChanged, NumericUpDown5.ValueChanged
+        Dim Ecc1, Ecc2, Ecc3 As Double
+        Dim Dev1, Dev2, Dev3 As Double
+
+        If kappa > 0 And tou > 0 And beta > 0 Then
+
+            Ecc1 = 0        'Start lower limit of eccentricity [-]
+            Ecc2 = 1.0      'Start upper limit of eccentricity [-]
+            Ecc3 = 0.5      'In the middle of eccentricity [-]
+
+            Dev1 = calc_A2(Ecc1)
+            Dev2 = calc_A2(Ecc2)
+            Dev3 = calc_A2(Ecc3)
+
+            '-------------Iteratie 30x halveren moet voldoende zijn ---------------
+            '---------- Exc= excentricity, looking for Deviation is zero ---------
+
+            For jjr = 0 To 30
+                If Dev1 * Dev3 < 0 Then
+                    Ecc2 = Ecc3
+                Else
+                    Ecc1 = Ecc3
+                End If
+                Ecc3 = (Ecc1 + Ecc2) / 2
+                Dev1 = calc_A2(Ecc1)
+                Dev2 = calc_A2(Ecc2)
+                Dev3 = calc_A2(Ecc3)
+            Next jjr
+            NumericUpDown5.Value = Round(Ecc3, 3).ToString              'Beta diameter ratio
+            beta = Ecc3
+            dia_keel = beta * dia_in
+
+            '-------- Controle nulpunt zoek functie ----------------
+            If Dev3 > 0.01 Then
+                GroupBox4.BackColor = Color.Red
+            Else
+                GroupBox4.BackColor = Color.Transparent
+            End If
+
+            present_results()
+            draw_chart1()
+        End If
+    End Sub
+
+    Private Function calc_A2(betaa As Double)
         dyn_visco = kin_visco / density
 
         '----- calc -------------
         p2_tap = p1_tap - dp_tap
         tou = p2_tap / p1_tap                       'Pressure ratio
+
+        'MessageBox.Show("kappa= " & kappa.ToString & " tou= " & tou.ToString & " beta= " & beta.ToString)
 
         '---------- expansie factor ISI 5167-4 Equation 2---------
         exp_factor1 = kappa * tou ^ (2 / kappa)
@@ -88,6 +100,7 @@ Public Class Form1
 
         exp_factor3 = 1 - tou ^ ((kappa - 1) / kappa)
         exp_factor3 /= 1 - tou
+
         exp_factor = Math.Sqrt(exp_factor1 * exp_factor2 * exp_factor3)
 
         '------------- itteratie-------------------
@@ -144,7 +157,6 @@ Public Class Form1
     Private Sub draw_chart1()
         Dim x, y As Double
         Try
-            'Clear all series And chart areas so we can re-add them
             Chart1.Series.Clear()
             Chart1.ChartAreas.Clear()
             Chart1.Titles.Clear()
@@ -174,26 +186,34 @@ Public Class Form1
     End Sub
 
     Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click, TabControl1.Enter, NumericUpDown9.ValueChanged, NumericUpDown3.ValueChanged
-        Dim Length(8) As Double
+        Dim Length(10) As Double
         Dim deltad As Double
 
         deltad = (dia_in - dia_keel) / 2
         TextBox15.Text = Round(dia_in * 1000, 0).ToString       'Diameter in
         TextBox17.Text = Round(dia_keel * 1000, 0).ToString     'Diameter keel
 
-        Length(0) = 3 * dia_in                                  'Recht in 
-        Length(1) = deltad / Math.Tan(NumericUpDown3.Value * Math.PI / 180)       'Convergeren
-        Length(2) = dia_keel                                    'Meten
-        Length(3) = deltad / Math.Tan(NumericUpDown9.Value * Math.PI / 180)       'Divergeren
-        Length(4) = 3 * dia_in                                  'Recht uit
-        Length(5) = Length(0) + Length(1) + Length(2) + Length(3) + Length(4)
+        Length(0) = 2 * dia_in                                  'Bocht R=D 
+        Length(1) = 3 * dia_in                                  'Recht in 
 
-        TextBox6.Text = Round(Length(0) * 1000, 0).ToString
-        TextBox7.Text = Round(Length(1) * 1000, 0).ToString
-        TextBox8.Text = Round(Length(2) * 1000, 0).ToString
-        TextBox9.Text = Round(Length(3) * 1000, 0).ToString
-        TextBox10.Text = Round(Length(4) * 1000, 0).ToString
-        TextBox11.Text = Round(Length(5) * 1000, 0).ToString
+        Length(2) = deltad / Math.Tan(NumericUpDown3.Value * Math.PI / 180)       'Convergeren
+        Length(3) = dia_keel                                    'Meten
+        Length(4) = deltad / Math.Tan(NumericUpDown9.Value * Math.PI / 180)       'Divergeren
+        Length(5) = 3 * dia_in                                  'Recht uit
+        Length(6) = dia_in / 4                                  'Lucht inlaat
+        Length(7) = dia_in                                      'Chinese hat
+        Length(8) = Length(0) + Length(1) + Length(2) + Length(3) + Length(4) + Length(5) + Length(6) + Length(7)
 
+        TextBox20.Text = Round(Length(0) * 1000, 0).ToString
+        TextBox6.Text = Round(Length(1) * 1000, 0).ToString
+        TextBox7.Text = Round(Length(2) * 1000, 0).ToString
+        TextBox8.Text = Round(Length(3) * 1000, 0).ToString
+        TextBox9.Text = Round(Length(4) * 1000, 0).ToString
+        TextBox10.Text = Round(Length(5) * 1000, 0).ToString
+        TextBox18.Text = Round(Length(6) * 1000, 0).ToString
+        TextBox19.Text = Round(Length(7) * 1000, 0).ToString
+        TextBox11.Text = Round(Length(8) * 1000, 0).ToString
+
+        TextBox22.Text = Round(dia_keel * 1000, 0).ToString     'Length C
     End Sub
 End Class
