@@ -70,9 +70,8 @@ Public Class Form1
         p1_tap = NumericUpDown11.Value * 100        '[mBar]->[pa]
         dp_tap = NumericUpDown8.Value * 100         '[mBar]->[pa]
         dia_in = NumericUpDown4.Value / 1000        '[m] classis venturi inlet diameter = outlet diameter
-        dia_keel = betaa * dia_in                    '[m]
 
-        '-------------VB Prevent problems ----------------
+        '-------------VB Prevent div by zero problems ----------------
         If density = 0 Then density = 1             'Prevent problems
         dyn_visco = kin_visco / density
 
@@ -172,5 +171,29 @@ Public Class Form1
         Catch ex As Exception
             'MessageBox.Show(ex.Message &"Error 845")  ' Show the exception's message.
         End Try
+    End Sub
+
+    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click, TabControl1.Enter, NumericUpDown9.ValueChanged, NumericUpDown3.ValueChanged
+        Dim Length(8) As Double
+        Dim deltad As Double
+
+        deltad = (dia_in - dia_keel) / 2
+        TextBox15.Text = Round(dia_in * 1000, 0).ToString       'Diameter in
+        TextBox17.Text = Round(dia_keel * 1000, 0).ToString     'Diameter keel
+
+        Length(0) = 3 * dia_in                                  'Recht in 
+        Length(1) = deltad / Math.Tan(NumericUpDown3.Value * Math.PI / 180)       'Convergeren
+        Length(2) = dia_keel                                    'Meten
+        Length(3) = deltad / Math.Tan(NumericUpDown9.Value * Math.PI / 180)       'Divergeren
+        Length(4) = 3 * dia_in                                  'Recht uit
+        Length(5) = Length(0) + Length(1) + Length(2) + Length(3) + Length(4)
+
+        TextBox6.Text = Round(Length(0) * 1000, 0).ToString
+        TextBox7.Text = Round(Length(1) * 1000, 0).ToString
+        TextBox8.Text = Round(Length(2) * 1000, 0).ToString
+        TextBox9.Text = Round(Length(3) * 1000, 0).ToString
+        TextBox10.Text = Round(Length(4) * 1000, 0).ToString
+        TextBox11.Text = Round(Length(5) * 1000, 0).ToString
+
     End Sub
 End Class
