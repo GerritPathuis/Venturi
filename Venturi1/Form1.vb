@@ -6,7 +6,7 @@ Imports System.Collections.Generic
 'Imports System.Windows.Forms.DataVisualization.Charting
 Imports System.Globalization
 Imports System.Threading
-'Imports Word = Microsoft.Office.Interop.Word
+Imports Word = Microsoft.Office.Interop.Word
 
 Public Class Form1
     Dim flow_kghr, flow_m3sec As Double
@@ -14,82 +14,90 @@ Public Class Form1
     Dim kin_visco, dyn_visco, density As Double         'Medium info
     Dim C_classic, Reynolds, area_in, speed As Double   'Venturi data
     Dim p1_tap, p2_tap, dp_tap, kappa, tou As Double    'Pressures
+    Dim dp_venturi As Double
     Dim exp_factor, exp_factor1, exp_factor2, exp_factor3 As Double
     Dim A2a, A2b, a2c As Double
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         TextBox21.Text =
+       "ISO5167-1:2003" & vbCrLf &
        "ISO5167-4:2003" & vbCrLf &
        "Classieke Venturi diameter 200-1200mm"
 
         '------------- Initial values----------------------
-        kappa = NumericUpDown7.Value                'Isentropic exponent
-        density = NumericUpDown2.Value              '[kg/m3]
-        kin_visco = NumericUpDown6.Value * 10 ^ -6
-        p1_tap = NumericUpDown11.Value * 100        '[mBar]->[pa]
-        dp_tap = NumericUpDown8.Value * 100         '[mBar]->[pa]
-        dia_in = NumericUpDown4.Value / 1000        '[m] classis venturi inlet diameter = outlet diameter
-        beta = NumericUpDown5.Value
-        dyn_visco = kin_visco / density             'Calc dyn visco
+        flow_kghr = 30000           '[kg/m3]
+        density = 1.2               '[kg/m3]
+        kappa = 1.4                 'Isentropic exponent
+        kin_visco = 15.1 * 10 ^ -6  '[m2/s]
+        p1_tap = 101325             '[pa]
+        dp_tap = 300                '[pa]
+        dia_in = 0.8                '[m] classis venturi inlet diameter = outlet diameter
+        beta = 0.5                  '[-]
+        C_classic = 0.985           'See ISO5167-4 section 5.5.4
+
+        '--------- calc ---------------
+        flow_m3sec = flow_kghr / (3600 * density)   '[m3/s]
+        area_in = Math.PI / 4 * dia_in ^ 2          '[m2]
+        speed = flow_m3sec / area_in                '[m/s] keel
         p2_tap = p1_tap - dp_tap
         tou = p2_tap / p1_tap                       'Pressure ratio
+        dia_keel = beta * dia_in
+        dyn_visco = kin_visco / density             'Calc dyn visco
 
-        C_classic = 0.985                           'See ISO5167-4 section 5.5.4
+        '----------- terug zetten op het scherm-------------
+        present_results()
         Button1.PerformClick()
-        Button1.PerformClick()                      'God knows why
     End Sub
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click, NumericUpDown2.ValueChanged, NumericUpDown8.ValueChanged, NumericUpDown11.ValueChanged, NumericUpDown7.ValueChanged, NumericUpDown6.ValueChanged, NumericUpDown1.ValueChanged, NumericUpDown4.ValueChanged, NumericUpDown5.ValueChanged
         Dim Ecc1, Ecc2, Ecc3 As Double
         Dim Dev1, Dev2, Dev3 As Double
 
-        If kappa > 0 And tou > 0 And beta > 0 Then
+        get_data_from_screen()
 
-            Ecc1 = 0        'Start lower limit of eccentricity [-]
-            Ecc2 = 1.0      'Start upper limit of eccentricity [-]
-            Ecc3 = 0.5      'In the middle of eccentricity [-]
+        Ecc1 = 0        'Start lower limit of eccentricity [-]
+        Ecc2 = 1.0      'Start upper limit of eccentricity [-]
+        Ecc3 = 0.5      'In the middle of eccentricity [-]
 
+        Dev1 = calc_A2(Ecc1)
+        Dev2 = calc_A2(Ecc2)
+        Dev3 = calc_A2(Ecc3)
+
+        '-------------Iteratie 30x halveren moet voldoende zijn ---------------
+        '---------- Exc= excentricity, looking for Deviation is zero ---------
+
+        For jjr = 0 To 30
+            If Dev1 * Dev3 < 0 Then
+                Ecc2 = Ecc3
+            Else
+                Ecc1 = Ecc3
+            End If
+            Ecc3 = (Ecc1 + Ecc2) / 2
             Dev1 = calc_A2(Ecc1)
             Dev2 = calc_A2(Ecc2)
             Dev3 = calc_A2(Ecc3)
+        Next jjr
+        beta = Ecc3
+        dia_keel = beta * dia_in
 
-            '-------------Iteratie 30x halveren moet voldoende zijn ---------------
-            '---------- Exc= excentricity, looking for Deviation is zero ---------
-
-            For jjr = 0 To 30
-                If Dev1 * Dev3 < 0 Then
-                    Ecc2 = Ecc3
-                Else
-                    Ecc1 = Ecc3
-                End If
-                Ecc3 = (Ecc1 + Ecc2) / 2
-                Dev1 = calc_A2(Ecc1)
-                Dev2 = calc_A2(Ecc2)
-                Dev3 = calc_A2(Ecc3)
-            Next jjr
-            NumericUpDown5.Value = Round(Ecc3, 3).ToString              'Beta diameter ratio
-            beta = Ecc3
-            dia_keel = beta * dia_in
-
-            '-------- Controle nulpunt zoek functie ----------------
-            If Dev3 > 0.01 Then
-                GroupBox4.BackColor = Color.Red
-            Else
-                GroupBox4.BackColor = Color.Transparent
-            End If
-
-            present_results()
-            draw_chart1()
+        '-------- Controle nulpunt zoek functie ----------------
+        If Dev3 > 0.01 Then
+            GroupBox4.BackColor = Color.Red
+        Else
+            GroupBox4.BackColor = Color.Transparent
         End If
+
+        '-------- Unrecovered pressure loss over the complete venturi assembly----
+        dp_venturi = 0.15 * dp_tap
+
+        draw_chart1()
+        present_results()
     End Sub
 
     Private Function calc_A2(betaa As Double)
-        dyn_visco = kin_visco / density
 
         '----- calc -------------
         p2_tap = p1_tap - dp_tap
         tou = p2_tap / p1_tap                       'Pressure ratio
-
-        'MessageBox.Show("kappa= " & kappa.ToString & " tou= " & tou.ToString & " beta= " & beta.ToString)
 
         '---------- expansie factor ISI 5167-4 Equation 2---------
         exp_factor1 = kappa * tou ^ (2 / kappa)
@@ -112,46 +120,62 @@ Public Class Form1
 
         Reynolds = speed * dia_in * density / kin_visco
 
+
         A2a = dyn_visco * Reynolds / (dia_in * Math.Sqrt(2 * dp_tap * density))
         A2b = C_classic * exp_factor * betaa ^ 2 / Math.Sqrt(1 - betaa ^ 4)
         a2c = A2a - A2b
         Return (a2c)
     End Function
     Private Sub present_results()
-        TextBox1.Text = Math.Round(dia_keel * 1000, 0).ToString     '[mm] keel diameter
-        TextBox2.Text = C_classic.ToString
-        TextBox3.Text = Math.Round(Reynolds, 0).ToString            '[-]
-        TextBox4.Text = Math.Round(speed, 1).ToString               '[m/s]
-        TextBox5.Text = Math.Round(exp_factor, 3).ToString          '[-]
-        TextBox13.Text = Math.Round(p2_tap / 100, 1).ToString       '[Pa]->[mBar]
-        TextBox12.Text = Math.Round(tou, 4).ToString
-        TextBox14.Text = Math.Round(dyn_visco * 10 ^ 6, 2).ToString
-        TextBox16.Text = Math.Round(flow_m3sec, 4).ToString
+        Try
+            NumericUpDown1.Value = flow_kghr            '[kg/m3]
+            NumericUpDown7.Value = kappa                'Isentropic exponent
+            NumericUpDown2.Value = density              '[kg/m3]
+            NumericUpDown6.Value = kin_visco * 10 ^ 6   'kin_visco
+            NumericUpDown11.Value = p1_tap / 100        '[mBar]->[pa]
+            NumericUpDown8.Value = dp_tap / 100         '[mBar]->[pa]
+            NumericUpDown4.Value = dia_in * 1000        '[m] classis venturi inlet diameter = outlet diameter
+            NumericUpDown5.Value = beta                 '[-]
 
-        '------- Beta check --------------
-        If beta < 0.4 Or beta > 0.7 Then
-            NumericUpDown5.BackColor = Color.Red
-        Else
-            NumericUpDown5.BackColor = Color.LightGreen
-        End If
+            TextBox1.Text = Math.Round(dia_keel * 1000, 0).ToString     '[mm] keel diameter
+            TextBox2.Text = C_classic.ToString
+            TextBox3.Text = Math.Round(Reynolds, 0).ToString            '[-]
+            TextBox4.Text = Math.Round(speed, 1).ToString               '[m/s]
+            TextBox5.Text = Math.Round(exp_factor, 3).ToString          '[-]
+            TextBox13.Text = Math.Round(p2_tap / 100, 1).ToString       '[Pa]->[mBar]
+            TextBox12.Text = Math.Round(tou, 4).ToString
+            TextBox14.Text = Math.Round(dyn_visco * 10 ^ 6, 2).ToString
+            TextBox15.Text = Round(dia_in * 1000, 0).ToString       'Diameter in
+            TextBox16.Text = Math.Round(flow_m3sec, 3).ToString
+            TextBox17.Text = Round(dia_keel * 1000, 0).ToString     'Diameter keel
+            TextBox23.Text = Round(dp_venturi / 100, 2).ToString    'Unrecovered pressure loos [mBar]
 
-        '------- Tou check --------------
-        If tou < 0.75 Then
-            TextBox12.BackColor = Color.Red
-        Else
-            TextBox12.BackColor = Color.LightGreen
-        End If
+            '------- Beta check --------------
+            If beta < 0.4 Or beta > 0.7 Then
+                NumericUpDown5.BackColor = Color.Red
+            Else
+                NumericUpDown5.BackColor = Color.LightGreen
+            End If
 
-        '------- Reynolds check-----------
-        If Reynolds < 2.0 * 10 ^ 5 Or Reynolds > 2.0 * 10 ^ 6 Then
-            TextBox3.BackColor = Color.Red
-            If Reynolds < 2.0 * 10 ^ 5 Then Label10.Text = "Reynolds, Te lage snelheid"
-            If Reynolds > 2.0 * 10 ^ 6 Then Label10.Text = "Reynolds, Te Hoge snelheid"
-        Else
-            TextBox3.BackColor = Color.LightGreen
-            Label10.Text = "Reynolds OK"
-        End If
+            '------- Tou check --------------
+            If tou < 0.75 Then
+                TextBox12.BackColor = Color.Red
+            Else
+                TextBox12.BackColor = Color.LightGreen
+            End If
 
+            '------- Reynolds check-----------
+            If Reynolds < 2.0 * 10 ^ 5 Or Reynolds > 2.0 * 10 ^ 6 Then
+                TextBox3.BackColor = Color.Red
+                If Reynolds < 2.0 * 10 ^ 5 Then Label10.Text = "Reynolds, Te lage snelheid"
+                If Reynolds > 2.0 * 10 ^ 6 Then Label10.Text = "Reynolds, Te Hoge snelheid"
+            Else
+                TextBox3.BackColor = Color.LightGreen
+                Label10.Text = "Reynolds OK"
+            End If
+        Catch ex As Exception
+            'MessageBox.Show(ex.Message &"Error 845")  ' Show the exception's message.
+        End Try
     End Sub
 
     Private Sub draw_chart1()
@@ -175,16 +199,19 @@ Public Class Form1
             Chart1.ChartAreas("ChartArea0").AxisY.Title = "Invariant A2"
             Chart1.ChartAreas("ChartArea0").AxisX.Title = "Beta [-]"
 
-            For x = 0 To 1.01 Step 0.01
+            '------ data for the Chart -----------------------------
+            For x = 0 To 1.0 Step 0.01
                 y = calc_A2(x)
                 Chart1.Series(0).Points.AddXY(x, y)
             Next x
 
+            '------ data for the actual beta value -----------------
+            calc_A2(beta)
         Catch ex As Exception
-            'MessageBox.Show(ex.Message &"Error 845")  ' Show the exception's message.
+            'MessageBox.Show(ex.Message &"Error 206")  ' Show the exception's message.
         End Try
     End Sub
-
+    '-------------------- Dimension of the Venturi ----------------
     Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click, TabControl1.Enter, NumericUpDown9.ValueChanged, NumericUpDown3.ValueChanged
         Dim Length(10) As Double
         Dim deltad As Double
@@ -195,7 +222,6 @@ Public Class Form1
 
         Length(0) = 2 * dia_in                                  'Bocht R=D 
         Length(1) = 3 * dia_in                                  'Recht in 
-
         Length(2) = deltad / Math.Tan(NumericUpDown3.Value * Math.PI / 180)       'Convergeren
         Length(3) = dia_keel                                    'Meten
         Length(4) = deltad / Math.Tan(NumericUpDown9.Value * Math.PI / 180)       'Divergeren
@@ -215,5 +241,197 @@ Public Class Form1
         TextBox11.Text = Round(Length(8) * 1000, 0).ToString
 
         TextBox22.Text = Round(dia_keel * 1000, 0).ToString     'Length C
+    End Sub
+
+    Private Sub get_data_from_screen()
+        Try
+            flow_kghr = NumericUpDown1.Value            '[kg/m3]
+            kappa = NumericUpDown7.Value                'Isentropic exponent
+            density = NumericUpDown2.Value              '[kg/m3]
+            kin_visco = NumericUpDown6.Value / 10 ^ 6   'kin_visco
+            p1_tap = NumericUpDown11.Value * 100        '[mBar]->[pa]
+            dp_tap = NumericUpDown8.Value * 100         '[mBar]->[pa]
+            dia_in = NumericUpDown4.Value / 1000        '[m] classis venturi inlet diameter = outlet diameter
+            dyn_visco = kin_visco / density
+
+        Catch ex As Exception
+            'MessageBox.Show(ex.Message &"Error 254")  ' Show the exception's message.
+        End Try
+    End Sub
+
+    Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click
+        Dim oWord As Word.Application ' = Nothing
+
+        Dim oDoc As Word.Document
+        Dim oTable As Word.Table
+        Dim oPara1, oPara2, oPara4 As Word.Paragraph
+        Dim row, font_sizze As Integer
+        Dim ufilename As String
+
+        Try
+            oWord = New Word.Application()
+
+            'Start Word and open the document template. 
+            font_sizze = 9
+            oWord = CreateObject("Word.Application")
+            oWord.Visible = True
+            oDoc = oWord.Documents.Add
+
+            'Insert a paragraph at the beginning of the document. 
+            oPara1 = oDoc.Content.Paragraphs.Add
+            oPara1.Range.Text = "VTK Engineering"
+            oPara1.Range.Font.Name = "Arial"
+            oPara1.Range.Font.Size = font_sizze + 3
+            oPara1.Range.Font.Bold = True
+            oPara1.Format.SpaceAfter = 1                '24 pt spacing after paragraph. 
+            oPara1.Range.InsertParagraphAfter()
+
+            oPara2 = oDoc.Content.Paragraphs.Add(oDoc.Bookmarks.Item("\endofdoc").Range)
+            oPara2.Range.Font.Size = font_sizze + 1
+            oPara2.Format.SpaceAfter = 1
+            oPara2.Range.Font.Bold = False
+            oPara2.Range.Text = "Classical Venturi tube acc ISO5167-1,-4:2003" & vbCrLf
+            oPara2.Range.InsertParagraphAfter()
+
+            '----------------------------------------------
+            'Insert a table, fill it with data and change the column widths.
+            oTable = oDoc.Tables.Add(oDoc.Bookmarks.Item("\endofdoc").Range, 4, 2)
+            oTable.Range.ParagraphFormat.SpaceAfter = 1
+            oTable.Range.Font.Size = font_sizze
+            oTable.Range.Font.Bold = False
+            oTable.Rows.Item(1).Range.Font.Bold = True
+
+            row = 1
+            oTable.Cell(row, 1).Range.Text = "Project Name"
+            oTable.Cell(row, 2).Range.Text = TextBox24.Text
+            row += 1
+            oTable.Cell(row, 1).Range.Text = "Project number "
+            oTable.Cell(row, 2).Range.Text = TextBox25.Text
+            row += 1
+            oTable.Cell(row, 1).Range.Text = "Author "
+            oTable.Cell(row, 2).Range.Text = Environment.UserName
+            row += 1
+            oTable.Cell(row, 1).Range.Text = "Date "
+            oTable.Cell(row, 2).Range.Text = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+
+            oTable.Columns(1).Width = oWord.InchesToPoints(2.5)   'Change width of columns 1 & 2.
+            oTable.Columns(2).Width = oWord.InchesToPoints(2)
+
+            oTable.Rows.Item(1).Range.Font.Bold = True
+            oDoc.Bookmarks.Item("\endofdoc").Range.InsertParagraphAfter()
+
+            '----------------------------------------------
+            'Insert a 16 x 3 table, fill it with data and change the column widths.
+            oTable = oDoc.Tables.Add(oDoc.Bookmarks.Item("\endofdoc").Range, 22, 3)
+            oTable.Range.ParagraphFormat.SpaceAfter = 1
+            oTable.Range.Font.Size = font_sizze
+            oTable.Range.Font.Bold = False
+            oTable.Rows.Item(1).Range.Font.Bold = True
+            oTable.Rows.Item(1).Range.Font.Size = font_sizze + 2
+            row = 1
+            oTable.Cell(row, 1).Range.Text = "Input Data"
+            row += 1
+
+            oTable.Cell(row, 1).Range.Text = "Air density"
+            oTable.Cell(row, 2).Range.Text = NumericUpDown2.Value
+            oTable.Cell(row, 3).Range.Text = "[kg/m3]"
+            row += 1
+
+            oTable.Cell(row, 1).Range.Text = "Kinematic visco"
+            oTable.Cell(row, 2).Range.Text = NumericUpDown6.Value
+            oTable.Cell(row, 3).Range.Text = "[m2/sec 10^-6]"
+
+            row += 1
+            oTable.Cell(row, 1).Range.Text = "Dynamic visco"
+            oTable.Cell(row, 2).Range.Text = TextBox14.Text
+            oTable.Cell(row, 3).Range.Text = "[Pa.s 10^-6]"
+
+            row += 1
+            oTable.Cell(row, 1).Range.Text = "Isentropic exponent"
+            oTable.Cell(row, 2).Range.Text = NumericUpDown7.Value
+            oTable.Cell(row, 3).Range.Text = "[-]"
+            row += 1
+            oTable.Cell(row, 1).Range.Text = "Inlet pressure"
+            oTable.Cell(row, 2).Range.Text = NumericUpDown11.Value
+            oTable.Cell(row, 3).Range.Text = "[mBar abs]"
+            row += 1
+            oTable.Cell(row, 1).Range.Text = "dp @ max flow"
+            oTable.Cell(row, 2).Range.Text = NumericUpDown8.Value
+            oTable.Cell(row, 3).Range.Text = "[mBar]"
+            row += 1
+            oTable.Cell(row, 1).Range.Text = "Mass flow"
+            oTable.Cell(row, 2).Range.Text = NumericUpDown1.Value
+            oTable.Cell(row, 3).Range.Text = "[kg/h]"
+            row += 1
+            oTable.Cell(row, 1).Range.Text = "Volume flow"
+            oTable.Cell(row, 2).Range.Text = TextBox16.Text
+            oTable.Cell(row, 3).Range.Text = "[m3/s]"
+
+            row += 1
+            oTable.Cell(row, 1).Range.Text = "Inlet diameter"
+            oTable.Cell(row, 2).Range.Text = NumericUpDown4.Value
+            oTable.Cell(row, 3).Range.Text = "[mm]"
+
+            'oTable.Rows.Item(row).Range.Font.Bold = True
+            'oTable.Rows.Item(row).Range.Font.Size = font_sizze
+            row += 1
+            oTable.Cell(row, 1).Range.Text = "Throut diameter"
+            oTable.Cell(row, 2).Range.Text = TextBox1.Text
+            oTable.Cell(row, 3).Range.Text = "[mm]"
+
+            row += 1
+            oTable.Cell(row, 1).Range.Text = "Inlet speed"
+            oTable.Cell(row, 2).Range.Text = TextBox4.Text
+            oTable.Cell(row, 3).Range.Text = "[m/s]"
+
+            row += 1
+            oTable.Cell(row, 1).Range.Text = "Reynolds"
+            oTable.Cell(row, 2).Range.Text = TextBox3.Text
+            oTable.Cell(row, 3).Range.Text = "[-]"
+            row += 1
+            oTable.Cell(row, 1).Range.Text = "Beta"
+            oTable.Cell(row, 2).Range.Text = Round(NumericUpDown5.Value, 2)
+            oTable.Cell(row, 3).Range.Text = "[-]"
+
+            row += 1
+            oTable.Cell(row, 1).Range.Text = "Discharge Coefficient"
+            oTable.Cell(row, 2).Range.Text = TextBox2.Text
+            oTable.Cell(row, 3).Range.Text = "[-]"
+            row += 1
+            oTable.Cell(row, 1).Range.Text = "Expansion factor"
+            oTable.Cell(row, 2).Range.Text = TextBox5.Text
+            oTable.Cell(row, 3).Range.Text = "[-]"
+
+            row += 1
+            oTable.Cell(row, 1).Range.Text = "Uncovered pressure loss"
+            oTable.Cell(row, 2).Range.Text = TextBox23.Text
+            oTable.Cell(row, 3).Range.Text = "[mbar]"
+
+            oTable.Columns(1).Width = oWord.InchesToPoints(2.4)   'Change width of columns 1 & 2.
+            oTable.Columns(2).Width = oWord.InchesToPoints(1.2)
+            oTable.Columns(3).Width = oWord.InchesToPoints(1.3)
+            oDoc.Bookmarks.Item("\endofdoc").Range.InsertParagraphAfter()
+
+
+            '------------------save picture ---------------- 
+            Chart1.SaveImage("c:\Temp\MainChart.gif", System.Drawing.Imaging.ImageFormat.Gif)
+            oPara4 = oDoc.Content.Paragraphs.Add
+            oPara4.Alignment = Word.WdParagraphAlignment.wdAlignParagraphLeft
+            oPara4.Range.InlineShapes.AddPicture("c:\Temp\MainChart.gif")
+            oPara4.Range.InlineShapes.Item(1).LockAspectRatio = True
+            oPara4.Range.InlineShapes.Item(1).Width = 310
+            oDoc.Bookmarks.Item("\endofdoc").Range.InsertParagraphAfter()
+
+            '--------------Save file word file------------------
+            'See https://msdn.microsoft.com/en-us/library/63w57f4b.aspx
+            ufilename = "N:\Engineering\VBasic\Rapport_copy\Campbell_report_" & DateTime.Now.ToString("yyyy_MM_dd__HH_mm_ss") & ".docx"
+
+            If Directory.Exists("N:\Engineering\VBasic\Rapport_copy") Then
+                'GroupBox12.Text = "File saved at " & ufilename
+                oWord.ActiveDocument.SaveAs(ufilename)
+            End If
+        Catch ex As Exception
+            MessageBox.Show("Bestaat directory N:\Engineering\VBasic\Rapport_copy\ ? " & ex.Message)  ' Show the exception's message.
+        End Try
     End Sub
 End Class
