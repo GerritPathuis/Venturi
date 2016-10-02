@@ -14,7 +14,7 @@ Public Class Form1
     Dim kin_visco, dyn_visco, density As Double         'Medium info
     Dim C_classic, Reynolds, area_in, speed_inlet As Double   'Venturi data
     Dim p1_tap, p2_tap, dp_tap, kappa, tou As Double    'Pressures
-    Dim dp_venturi, zeta As Double
+    Dim de_venturi7, zeta As Double
     Dim exp_factor, exp_factor1, exp_factor2, exp_factor3 As Double
     Dim A2a, A2b, a2c As Double
 
@@ -88,11 +88,13 @@ Public Class Form1
         End If
 
         '-------- Unrecovered pressure loss over the complete venturi assembly----
-        'dp_venturi = 0.15 * dp_tap
-        dp_venturi = (-0.017 * beta + 0.191) * dp_tap
+        'de_venturi7 = 0.15 * dp_tap
+        de_venturi7 = (-0.017 * beta + 0.191) * dp_tap   'For 7 degree divergent section
+
 
         '--------- resistance coefficient venturi assembly 
-        zeta = 2 * dp_venturi / (density * speed_inlet ^ 2)
+        zeta = 2 * de_venturi7 / (density * speed_inlet ^ 2)
+
 
         draw_chart1()
         present_results()
@@ -155,7 +157,7 @@ Public Class Form1
             TextBox15.Text = Round(dia_in * 1000, 0).ToString       'Diameter in
             TextBox16.Text = Math.Round(flow_m3sec, 3).ToString
             TextBox17.Text = Round(dia_keel * 1000, 0).ToString     'Diameter keel
-            TextBox23.Text = Round(dp_venturi / 100, 2).ToString    'Unrecovered pressure loos [mBar]
+            TextBox23.Text = Round(de_venturi7 / 100, 2).ToString    'Unrecovered pressure loos [mBar]
             TextBox26.Text = Round(zeta, 2).ToString                'Resistance coeffi venturi assembly
 
             '------- Beta check --------------
@@ -220,7 +222,7 @@ Public Class Form1
         End Try
     End Sub
     '-------------------- Dimension of the Venturi ----------------
-    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click, TabControl1.Enter, NumericUpDown9.ValueChanged, NumericUpDown3.ValueChanged
+    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click, TabControl1.Enter, NumericUpDown9.ValueChanged, NumericUpDown3.ValueChanged, TabPage3.Enter
         Dim Length(10) As Double
         Dim deltad As Double
 
@@ -228,25 +230,25 @@ Public Class Form1
         TextBox15.Text = Round(dia_in * 1000, 0).ToString       'Diameter in
         TextBox17.Text = Round(dia_keel * 1000, 0).ToString     'Diameter keel
 
-        Length(0) = 2 * dia_in                                  'Bocht R=D 
+        Length(0) = 2 * dia_in                                  'Bocht R=D bij fan intake
         Length(1) = 3 * dia_in                                  'Recht in 
         Length(2) = deltad / Math.Tan(NumericUpDown3.Value * Math.PI / 180)       'Convergeren
         Length(3) = dia_keel                                    'Meten
         Length(4) = deltad / Math.Tan(NumericUpDown9.Value * Math.PI / 180)       'Divergeren
-        Length(5) = 3 * dia_in                                  'Recht uit
+        Length(5) = 4 * dia_keel                                'Recht achter Venturi
         Length(6) = dia_in / 4                                  'Lucht inlaat
         Length(7) = dia_in                                      'Chinese hat
         Length(8) = Length(0) + Length(1) + Length(2) + Length(3) + Length(4) + Length(5) + Length(6) + Length(7)
 
-        TextBox20.Text = Round(Length(0) * 1000, 0).ToString
+        TextBox20.Text = Round(Length(0) * 1000, 0).ToString    'Bend
         TextBox6.Text = Round(Length(1) * 1000, 0).ToString
         TextBox7.Text = Round(Length(2) * 1000, 0).ToString
         TextBox8.Text = Round(Length(3) * 1000, 0).ToString
         TextBox9.Text = Round(Length(4) * 1000, 0).ToString
-        TextBox10.Text = Round(Length(5) * 1000, 0).ToString
-        TextBox18.Text = Round(Length(6) * 1000, 0).ToString
-        TextBox19.Text = Round(Length(7) * 1000, 0).ToString
-        TextBox11.Text = Round(Length(8) * 1000, 0).ToString
+        TextBox10.Text = Round(Length(5) * 1000, 0).ToString    'Down stream 4xd
+        TextBox18.Text = Round(Length(6) * 1000, 0).ToString    'Air intake
+        TextBox19.Text = Round(Length(7) * 1000, 0).ToString    'Chinese hat
+        TextBox11.Text = Round(Length(8) * 1000, 0).ToString    'Total
 
         TextBox22.Text = Round(dia_keel * 1000, 0).ToString     'Length C
     End Sub
@@ -298,7 +300,7 @@ Public Class Form1
             oPara2.Range.Font.Size = font_sizze + 1
             oPara2.Format.SpaceAfter = 1
             oPara2.Range.Font.Bold = False
-            oPara2.Range.Text = "Classical Venturi tube acc ISO5167-1,-4:2003" & vbCrLf
+            oPara2.Range.Text = "Classical Venturi tube acc ISO5167-1-4:2003" & vbCrLf
             oPara2.Range.InsertParagraphAfter()
 
             '----------------------------------------------
@@ -339,11 +341,11 @@ Public Class Form1
             oTable.Cell(row, 1).Range.Text = "Input Data"
             row += 1
             oTable.Cell(row, 1).Range.Text = "Air density"
-            oTable.Cell(row, 2).Range.Text = NumericUpDown2.Value
+            oTable.Cell(row, 2).Range.Text = NumericUpDown2.Value.ToString
             oTable.Cell(row, 3).Range.Text = "[kg/m3]"
             row += 1
             oTable.Cell(row, 1).Range.Text = "Kinematic visco"
-            oTable.Cell(row, 2).Range.Text = NumericUpDown6.Value
+            oTable.Cell(row, 2).Range.Text = NumericUpDown6.Value.ToString
             oTable.Cell(row, 3).Range.Text = "[m2/sec 10^-6]"
             row += 1
             oTable.Cell(row, 1).Range.Text = "Dynamic visco"
@@ -351,34 +353,34 @@ Public Class Form1
             oTable.Cell(row, 3).Range.Text = "[Pa.s 10^-6]"
             row += 1
             oTable.Cell(row, 1).Range.Text = "Isentropic exponent"
-            oTable.Cell(row, 2).Range.Text = NumericUpDown7.Value
+            oTable.Cell(row, 2).Range.Text = NumericUpDown7.Value.ToString
             oTable.Cell(row, 3).Range.Text = "[-]"
             row += 1
             oTable.Cell(row, 1).Range.Text = "Inlet pressure"
-            oTable.Cell(row, 2).Range.Text = NumericUpDown11.Value
+            oTable.Cell(row, 2).Range.Text = NumericUpDown11.Value.ToString
             oTable.Cell(row, 3).Range.Text = "[mBar abs]"
             row += 1
             oTable.Cell(row, 1).Range.Text = "dp @ max flow"
-            oTable.Cell(row, 2).Range.Text = NumericUpDown8.Value
+            oTable.Cell(row, 2).Range.Text = NumericUpDown8.Value.ToString
             oTable.Cell(row, 3).Range.Text = "[mBar]"
             row += 1
             oTable.Cell(row, 1).Range.Text = "Mass flow"
-            oTable.Cell(row, 2).Range.Text = NumericUpDown1.Value
+            oTable.Cell(row, 2).Range.Text = NumericUpDown1.Value.ToString
             oTable.Cell(row, 3).Range.Text = "[kg/h]"
             row += 1
             oTable.Cell(row, 1).Range.Text = "Volume flow"
             oTable.Cell(row, 2).Range.Text = TextBox16.Text
             oTable.Cell(row, 3).Range.Text = "[m3/s]"
             row += 1
-            oTable.Cell(row, 1).Range.Text = "Inlet diameter"
-            oTable.Cell(row, 2).Range.Text = NumericUpDown4.Value
+            oTable.Cell(row, 1).Range.Text = "Inside Inlet diameter"
+            oTable.Cell(row, 2).Range.Text = NumericUpDown4.Value.ToString
             oTable.Cell(row, 3).Range.Text = "[mm]"
             row += 1
-            oTable.Cell(row, 1).Range.Text = "Throut diameter"
+            oTable.Cell(row, 1).Range.Text = "Inside Throat diameter"
             oTable.Cell(row, 2).Range.Text = TextBox1.Text
             oTable.Cell(row, 3).Range.Text = "[mm]"
             row += 1
-            oTable.Cell(row, 1).Range.Text = "Inlet speed_inlet"
+            oTable.Cell(row, 1).Range.Text = "Inlet speed"
             oTable.Cell(row, 2).Range.Text = TextBox4.Text
             oTable.Cell(row, 3).Range.Text = "[m/s]"
             row += 1
@@ -387,7 +389,7 @@ Public Class Form1
             oTable.Cell(row, 3).Range.Text = "[-]"
             row += 1
             oTable.Cell(row, 1).Range.Text = "Beta"
-            oTable.Cell(row, 2).Range.Text = Round(NumericUpDown5.Value, 2)
+            oTable.Cell(row, 2).Range.Text = Round(NumericUpDown5.Value, 3).ToString
             oTable.Cell(row, 3).Range.Text = "[-]"
             row += 1
             oTable.Cell(row, 1).Range.Text = "Discharge Coefficient"
@@ -401,6 +403,18 @@ Public Class Form1
             oTable.Cell(row, 1).Range.Text = "Uncovered pressure loss"
             oTable.Cell(row, 2).Range.Text = TextBox23.Text
             oTable.Cell(row, 3).Range.Text = "[mbar]"
+            row += 1
+            oTable.Cell(row, 1).Range.Text = "Converging angle, length"
+            oTable.Cell(row, 2).Range.Text = NumericUpDown3.Value.ToString & vbTab & TextBox7.Text
+            oTable.Cell(row, 3).Range.Text = "[deg, mm]"
+            row += 1
+            oTable.Cell(row, 1).Range.Text = "Measuring section"
+            oTable.Cell(row, 2).Range.Text = TextBox8.Text
+            oTable.Cell(row, 3).Range.Text = "[mm]"
+            row += 1
+            oTable.Cell(row, 1).Range.Text = "Diverging angle, length"
+            oTable.Cell(row, 2).Range.Text = NumericUpDown9.Value.ToString & vbTab & TextBox9.Text
+            oTable.Cell(row, 3).Range.Text = "[deg, mm]"
 
             oTable.Columns(1).Width = oWord.InchesToPoints(2.4)   'Change width of columns 1 & 2.
             oTable.Columns(2).Width = oWord.InchesToPoints(1.2)
