@@ -331,7 +331,7 @@ Public Class Form1
 
             '----------------------------------------------
             'Insert a 16 x 3 table, fill it with data and change the column widths.
-            oTable = oDoc.Tables.Add(oDoc.Bookmarks.Item("\endofdoc").Range, 22, 3)
+            oTable = oDoc.Tables.Add(oDoc.Bookmarks.Item("\endofdoc").Range, 23, 3)
             oTable.Range.ParagraphFormat.SpaceAfter = 1
             oTable.Range.Font.Size = font_sizze
             oTable.Range.Font.Bold = False
@@ -404,6 +404,10 @@ Public Class Form1
             oTable.Cell(row, 2).Range.Text = TextBox23.Text
             oTable.Cell(row, 3).Range.Text = "[mbar]"
             row += 1
+            oTable.Cell(row, 1).Range.Text = "Downstream straight length"
+            oTable.Cell(row, 2).Range.Text = TextBox10.Text
+            oTable.Cell(row, 3).Range.Text = "[mm]"
+            row += 1
             oTable.Cell(row, 1).Range.Text = "Converging angle, length"
             oTable.Cell(row, 2).Range.Text = NumericUpDown3.Value.ToString & vbTab & TextBox7.Text
             oTable.Cell(row, 3).Range.Text = "[deg, mm]"
@@ -415,6 +419,14 @@ Public Class Form1
             oTable.Cell(row, 1).Range.Text = "Diverging angle, length"
             oTable.Cell(row, 2).Range.Text = NumericUpDown9.Value.ToString & vbTab & TextBox9.Text
             oTable.Cell(row, 3).Range.Text = "[deg, mm]"
+            row += 1
+            oTable.Cell(row, 1).Range.Text = "Upstream straight length"
+            oTable.Cell(row, 2).Range.Text = TextBox6.Text
+            oTable.Cell(row, 3).Range.Text = "[mm]"
+            row += 1
+            oTable.Cell(row, 1).Range.Text = "Total Stack length"
+            oTable.Cell(row, 2).Range.Text = TextBox11.Text
+            oTable.Cell(row, 3).Range.Text = "[mm]"
 
             oTable.Columns(1).Width = oWord.InchesToPoints(2.4)   'Change width of columns 1 & 2.
             oTable.Columns(2).Width = oWord.InchesToPoints(1.2)
