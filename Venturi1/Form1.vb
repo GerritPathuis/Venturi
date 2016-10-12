@@ -404,7 +404,7 @@ Public Class Form1
             oTable.Cell(row, 2).Range.Text = TextBox23.Text
             oTable.Cell(row, 3).Range.Text = "[mbar]"
             row += 1
-            oTable.Cell(row, 1).Range.Text = "Downstream straight length"
+            oTable.Cell(row, 1).Range.Text = "Upstream straight length"
             oTable.Cell(row, 2).Range.Text = TextBox10.Text
             oTable.Cell(row, 3).Range.Text = "[mm]"
             row += 1
@@ -420,7 +420,7 @@ Public Class Form1
             oTable.Cell(row, 2).Range.Text = NumericUpDown9.Value.ToString & vbTab & TextBox9.Text
             oTable.Cell(row, 3).Range.Text = "[deg, mm]"
             row += 1
-            oTable.Cell(row, 1).Range.Text = "Upstream straight length"
+            oTable.Cell(row, 1).Range.Text = "Down stream straight length"
             oTable.Cell(row, 2).Range.Text = TextBox6.Text
             oTable.Cell(row, 3).Range.Text = "[mm]"
             row += 1
